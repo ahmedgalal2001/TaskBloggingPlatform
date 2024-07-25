@@ -1,0 +1,6 @@
+@TaskBloggingPlatform_HostAddress = http://localhost:5207
+
+GET {{TaskBloggingPlatform_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
