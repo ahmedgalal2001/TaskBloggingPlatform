@@ -19,7 +19,7 @@
     - Open SQL Server Management Studio (SSMS).
     - Connect to your local SQL Server instance.
     - Right-click on `Databases` > `Restore Database...`.
-    - Select `Device` and click on `...` to browse and add the `.bak` file you created earlier.
+    - Select `Device` and click on `github` is called `BlogPlatform.bak` to browse and add the `.bak` file you created earlier.
     - Ensure the `Destination` database name is the same as in your application configuration.
     - Click `OK` to restore.
 
