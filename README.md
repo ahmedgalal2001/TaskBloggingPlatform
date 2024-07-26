@@ -34,7 +34,7 @@
 
 4. **Apply migrations** (if necessary):
     ```sh
-    dotnet ef database update
+    dotnet ef database update --project full_of_project
     ```
 
 5. **Install dependencies**:
@@ -44,7 +44,8 @@
 
 6. **Run the application**:
     ```sh
-    dotnet run
+    dotnet run --project full_of_project
+    go to your_localhost/swagger/index.html
     ```
 
 7. **Access the application**:
