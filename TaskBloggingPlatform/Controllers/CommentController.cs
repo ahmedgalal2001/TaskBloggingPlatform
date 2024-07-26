@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskBloggingPlatform.Data;
 using TaskBloggingPlatform.Dto.Comment;
@@ -6,6 +7,7 @@ using TaskBloggingPlatform.Models.Entities;
 
 namespace TaskBloggingPlatform.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class CommentController : ControllerBase
@@ -25,10 +27,11 @@ namespace TaskBloggingPlatform.Controllers
             }
             try
             {
+                int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int UserId);
                 var newComment = new Comment()
                 {
                     CommentText = comment.CommentText,
-                    CommenterId = comment.CommenterId,
+                    CommenterId = UserId,
                     PostId = comment.PostId,
                 };
                 blogDBContext.Comments.Add(newComment);
@@ -84,13 +87,13 @@ namespace TaskBloggingPlatform.Controllers
 
         // Update a comment
         [HttpPatch("UpdateComment")]
-        public IActionResult UpdateComment(int CommentId, int UserId , [FromBody] UpdateComment comment)
+        public IActionResult UpdateComment(int CommentId, [FromBody] UpdateComment comment)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
+            int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int UserId);
             var oldComment = blogDBContext.Comments.FirstOrDefault(c => c.Id == CommentId && c.User.Id == UserId);
             if (oldComment == null)
             {
@@ -127,8 +130,9 @@ namespace TaskBloggingPlatform.Controllers
 
         // Delete a comment
         [HttpDelete("DeleteComment")]
-        public IActionResult DeleteComment(int CommentId , int UserId)
+        public IActionResult DeleteComment(int CommentId)
         {
+            int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int UserId);
             var comment = blogDBContext.Comments.FirstOrDefault(c => c.Id == CommentId && c.User.Id == UserId);
             if (comment == null)
             {

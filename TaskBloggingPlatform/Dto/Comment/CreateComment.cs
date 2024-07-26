@@ -8,8 +8,8 @@ namespace TaskBloggingPlatform.Dto.Comment
         [Required(ErrorMessage = "Comment text is required.")]
         public string CommentText { get; set; }
 
-        [Required(ErrorMessage = "Commenter ID is required.")]
-        public int CommenterId { get; set; }
+        // [Required(ErrorMessage = "Commenter ID is required.")]
+        // public int CommenterId { get; set; }
 
         [Required(ErrorMessage = "Post ID is required.")]
         public int PostId { get; set; }

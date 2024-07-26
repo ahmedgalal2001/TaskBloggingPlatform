@@ -10,7 +10,7 @@ namespace TaskBloggingPlatform.Dto.Post
         [Required(ErrorMessage = "Content is required.")]
         public string Content { get; set; }
 
-        [Required(ErrorMessage = "User ID is required.")]
-        public int UserId { get; set; }
+        // [Required(ErrorMessage = "User ID is required.")]
+       // public int UserId { get; set; }
     }
 }

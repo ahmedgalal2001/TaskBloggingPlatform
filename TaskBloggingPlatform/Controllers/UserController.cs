@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TaskBloggingPlatform.Data;
 using TaskBloggingPlatform.Dto.User;
@@ -6,6 +7,7 @@ using TaskBloggingPlatform.Models.Entities;
 
 namespace TaskBloggingPlatform.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -15,63 +17,20 @@ namespace TaskBloggingPlatform.Controllers
         {
             this.blogDBContext = blogDBContext;
         }
+        [Admin]
         [HttpGet("GetUsers")]
         public IActionResult GetUsers()
         {
             var users = blogDBContext.Users.ToList();
             return Ok(users);
         }
-        [HttpGet("GetUser")]
+        [HttpGet("GetUser/{Id}")]
         public IActionResult GetUser(int Id)
         {
             var user = blogDBContext.Users.Where(u => u.Id == Id).FirstOrDefault();
             if (user == null)
                 return BadRequest("User not found");
             return Ok(user);
-        }
-        [HttpPost("CreateUser")]
-        public IActionResult CreateUser([FromBody] CreateUser user)
-        {
-            if (!ModelState.IsValid)
-            {
-                // Return validation errors
-                return BadRequest(ModelState);
-            }
-            try
-            {
-                var newUser = new User()
-                {
-                    Email = user.Email,
-                    Password = user.Password,
-                    UserName = user.UserName
-                };
-                blogDBContext.Users.Add(newUser);
-                blogDBContext.SaveChanges();
-                return Ok(newUser);
-            }
-            catch (DbUpdateException dbEx)
-            {
-                // Check for unique constraint violation
-                if (dbEx.InnerException != null)
-                {
-                    string innerMessage = dbEx.InnerException.Message;
-
-                    if (innerMessage.Contains("UX_User_Email"))
-                    {
-                        return BadRequest("The email address already exists.");
-                    }
-                    if (innerMessage.Contains("UX_User_UserName"))
-                    {
-                        return BadRequest("The username already exists.");
-                    }
-                }
-                return BadRequest(dbEx.Message);
-            }
-            catch (Exception ex)
-            {
-                // Handle other types of exceptions
-                return BadRequest(ex.Message);
-            }
         }
         [HttpPost("FollowUser")]
         public IActionResult Follow([FromBody] CreateFollow follow)
@@ -82,9 +41,10 @@ namespace TaskBloggingPlatform.Controllers
             }
             try
             {
+                int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int FollowerId);
                 var newFollow = new Follow()
                 {
-                    FollowerId = follow.FollowerId,
+                    FollowerId = FollowerId,
                     FollowingId = follow.FollowingId,
                 };
                 blogDBContext.Follows.Add(newFollow);
@@ -131,7 +91,8 @@ namespace TaskBloggingPlatform.Controllers
             }
             try
             {
-                var unFollow = blogDBContext.Follows.Where(f=>f.FollowerId == unfollow.FollowerId && f.FollowingId == unfollow.FollowingId).FirstOrDefault();
+                int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int FollowerId);
+                var unFollow = blogDBContext.Follows.Where(f => f.FollowerId == FollowerId && f.FollowingId == unfollow.FollowingId).FirstOrDefault();
                 if (unFollow == null) return BadRequest("You unfollow this person");
                 blogDBContext.Follows.Remove(unFollow);
                 blogDBContext.SaveChanges();
@@ -169,27 +130,30 @@ namespace TaskBloggingPlatform.Controllers
 
         }
         [HttpGet("GetFollowedPosts")]
-        public IActionResult GetFollowedPosts(int UserId)
+        public IActionResult GetFollowedPosts()
         {
-            var user = blogDBContext.Users.Where(u => u.Id == UserId).FirstOrDefault();
+            int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int FollowerId);
+            var user = blogDBContext.Users.Where(u => u.Id == FollowerId).FirstOrDefault();
             if (user == null)
                 return BadRequest("User not found");
-            var followingsIds = blogDBContext.Follows.Where(f => f.FollowerId == UserId).Select(f => f.FollowingId).ToList();
+            var followingsIds = blogDBContext.Follows.Where(f => f.FollowerId == FollowerId).Select(f => f.FollowingId).ToList();
             var posts = blogDBContext.Posts.Where(p => followingsIds.Contains(p.UserId));
             return Ok(posts);
         }
         [HttpGet("GetFollowers")]
-        public IActionResult GetFollowers(int UserId)
+        public IActionResult GetFollowers()
         {
-            var followerIds = blogDBContext.Follows.Where(u=>u.FollowingId ==  UserId).Select(u=>u.FollowerId).ToList();
+            int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int FollowerId);
+            var followerIds = blogDBContext.Follows.Where(u => u.FollowingId == FollowerId).Select(u => u.FollowerId).ToList();
             var followers = blogDBContext.Users.Where(u => followerIds.Contains(u.Id)).Include(u => u.Posts).Select(u => new { u.Posts, u.UserName, u.Email, u.Id }).ToList();
             return Ok(followers);
         }
         [HttpGet("GetFollowings")]
-        public IActionResult GetFollowings(int UserId)
+        public IActionResult GetFollowings()
         {
-            var followingIds = blogDBContext.Follows.Where(u => u.FollowerId == UserId).Select(u => u.FollowingId).ToList();
-            var followings = blogDBContext.Users.Where(u => followingIds.Contains(u.Id)).Include(u => u.Posts).Select(u => new { u.Posts, u.UserName , u.Email , u.Id }).ToList();
+            int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int FollowerId);
+            var followingIds = blogDBContext.Follows.Where(u => u.FollowerId == FollowerId).Select(u => u.FollowingId).ToList();
+            var followings = blogDBContext.Users.Where(u => followingIds.Contains(u.Id)).Include(u => u.Posts).Select(u => new { u.Posts, u.UserName, u.Email, u.Id }).ToList();
             return Ok(followings);
         }
     }

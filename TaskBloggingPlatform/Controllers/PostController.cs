@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using TaskBloggingPlatform.Data;
@@ -7,6 +8,7 @@ using TaskBloggingPlatform.Models.Entities;
 
 namespace TaskBloggingPlatform.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class PostController : ControllerBase
@@ -16,6 +18,7 @@ namespace TaskBloggingPlatform.Controllers
         {
             this.blogDBContext = blogDBContext;
         }
+        [Admin]
         [HttpGet("GetPosts")]
         public IActionResult GetPosts()
         {
@@ -48,11 +51,12 @@ namespace TaskBloggingPlatform.Controllers
             }
             try
             {
+                int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int UserId);
                 var newPost = new Post()
                 {
                     Title = post.Title,
                     Content = post.Content,
-                    UserId = post.UserId,
+                    UserId = UserId,
                 };
                 blogDBContext.Posts.Add(newPost);
                 blogDBContext.SaveChanges();
@@ -78,7 +82,7 @@ namespace TaskBloggingPlatform.Controllers
             }
         }
         [HttpPatch("UpdatePost")]
-        public IActionResult UpdatePost(int UserId, int PostId, [FromBody] UpdatePost post)
+        public IActionResult UpdatePost(int PostId, [FromBody] UpdatePost post)
         {
             if (!ModelState.IsValid)
             {
@@ -86,6 +90,7 @@ namespace TaskBloggingPlatform.Controllers
             }
             try
             {
+                int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int UserId);
                 var oldPost = blogDBContext.Posts.Where(p => p.Id == PostId && p.UserId == UserId).FirstOrDefault();
                 if (oldPost == null) return BadRequest("This post not found or not own to you");
                 oldPost.Title = post.Title;
@@ -113,10 +118,11 @@ namespace TaskBloggingPlatform.Controllers
             }
         }
         [HttpDelete("DeletePost")]
-        public IActionResult DeletePost(int UserId, int PostId)
+        public IActionResult DeletePost(int PostId)
         {
             try
             {
+                int.TryParse(User.Claims.FirstOrDefault(c => c.Type == "UserId").Value, out int UserId);
                 var oldPost = blogDBContext.Posts.Where(p => p.Id == PostId && p.UserId == UserId).FirstOrDefault();
                 if (oldPost == null) return BadRequest("This post not found or not own to you");
                 blogDBContext.Posts.Remove(oldPost);
