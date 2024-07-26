@@ -61,6 +61,20 @@ namespace TaskBloggingPlatform
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+            else
+            {
+                // Add production-specific configuration here if needed
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+
+                // Enable Swagger only if needed in production
+                app.UseSwagger();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+                    c.RoutePrefix = string.Empty; // Serve Swagger UI at the app's root
+                });
+            }
 
             app.UseHttpsRedirection();
 
